@@ -101,20 +101,38 @@ exports.getOneSauce = (req, res, next) => {
 
 // TODO
 exports.likeSauce = (req, res, next) => {
-  const sauceObject = JSON.parse(req.body.Sauce);
+  const likeObject = req.body
+  console.log(likeObject)
 
-  Sauce.findOne({_id: req.params._id})
+  Sauce.findById(req.params.id)
     .then(sauce => {
-      if (sauce._userId = req.auth._userId) {
+      console.log(sauce)
+      if (sauce.userId === req.auth._userId) {
         res.status(400).json({message: "Vous n'êtes pas autorisé à 'liker' votre propre sauce "})
       } else {
-        if (condition) {
-          
-        } else {
-          
-        }
-        
+        switch (likeObject.like) {
+          case 1:
+            sauce.likes = sauce.likes + 1;
+            sauce.usersLiked.push(likeObject.userId)
+            Sauce.findByIdAndUpdate(req.params.id, sauce)
+              .then(() => res.status(200).json({ message: 'like ajouté'}))
+              .catch(error => res.status(500).json({ error: error.message })) 
+              break;
+          case 0:
+            sauce.usersLiked.push(likeObject.userId)
+            Sauce.findByIdAndUpdate(req.params.id, sauce)
+              .then(() => res.status(200).json({ message: 'like aunnlé'}))
+              .catch(error => res.status(500).json({ error: error.message })) 
+              break;
+          case -1:
+            sauce.dislikes = sauce.dislikes + 1;
+            sauce.usersDisliked.push(likeObject.userId)
+            Sauce.findByIdAndUpdate(req.params.id, sauce)
+              .then(() => res.status(200).json({ message: 'dislike noté'}))
+              .catch(error => res.status(500).json({ error: error.message }))
+              break;
+        } 
       }
     })
-    .catch(error = res.status(500).json({ error }))
+    .catch(error => res.status(500).json({ error: error.message }))
 }
