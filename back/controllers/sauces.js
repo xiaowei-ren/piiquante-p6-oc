@@ -42,20 +42,6 @@ exports.modifySauce = (req, res, next) => {
     .catch((error) => {
       res.status(400).json({ error });
   });
-
-  Sauce.updateOne({_id: req.params.id}, sauce).then(
-    () => {
-      res.status(201).json({
-        message: 'Sauce updated successfully!'
-      });
-    }
-  ).catch(
-    (error) => {
-      res.status(400).json({
-        error: error
-      });
-    }
-  );
 };
 
 exports.deleteSauce = (req, res, next) => {
@@ -99,7 +85,7 @@ exports.getOneSauce = (req, res, next) => {
   );
 };
 
-// TODO
+
 exports.likeSauce = (req, res, next) => {
   const likeObject = req.body
   console.log(likeObject)
