@@ -1,6 +1,7 @@
 const Sauce = require('../models/Sauce');
 const fs = require('fs');
 
+// ajouter la sauce
 exports.createSauce = (req, res, next) => {
   const sauceObject = JSON.parse(req.body.sauce);
   delete sauceObject._id;
@@ -22,6 +23,7 @@ exports.createSauce = (req, res, next) => {
     });
 };
 
+// modifier la sacuce
 exports.modifySauce = (req, res, next) => {
   const sauceObject = req.file ? {
     ...JSON.parse(req.body.sauce),
@@ -44,6 +46,7 @@ exports.modifySauce = (req, res, next) => {
   });
 };
 
+//supprimer la sauce
 exports.deleteSauce = (req, res, next) => {
   Sauce.findOne({ _id: req.params.id})
     .then(sauce => {
@@ -63,12 +66,15 @@ exports.deleteSauce = (req, res, next) => {
       });    
 };
 
+
+// afficher les sauces
 exports.getAllSauces = (req, res, next) => {
   Sauce.find()
     .then(sauces => res.status(200).json(sauces))
     .catch(error => res.status(400).json({ error}))
 };
 
+//afficher les detailles d'un sauce
 exports.getOneSauce = (req, res, next) => {
   Sauce.findById(req.params.id).then(
     (sauce) => {
@@ -86,36 +92,73 @@ exports.getOneSauce = (req, res, next) => {
 };
 
 
+//commenter une sauce
 exports.likeSauce = (req, res, next) => {
   const likeObject = req.body
-  console.log(likeObject)
 
   Sauce.findById(req.params.id)
-    .then(sauce => {
-      console.log(sauce)
-      if (sauce.userId === req.auth._userId) {
+    .then(sauceObject => {
+      if (sauceObject.userId === req.auth._userId) {
         res.status(400).json({message: "Vous n'êtes pas autorisé à 'liker' votre propre sauce "})
       } else {
+        let usersLikedId = sauceObject.usersLiked.includes(req.body.userId);
+        let usersDislikedId = sauceObject.usersDisliked.includes(req.body.userId);
         switch (likeObject.like) {
-          case 1:
-            sauce.likes = sauce.likes + 1;
-            sauce.usersLiked.push(likeObject.userId)
-            Sauce.findByIdAndUpdate(req.params.id, sauce)
-              .then(() => res.status(200).json({ message: 'like ajouté'}))
-              .catch(error => res.status(500).json({ error: error.message })) 
+          case 1:          
+            if (usersLikedId) {
+              res.status(401).json({ message: 'Vous avez deja like cette sauce'})
+            } else {
+              sauceObject.likes = sauceObject.likes + 1;
+              sauceObject.usersLiked.push(likeObject.userId)
+              Sauce.findByIdAndUpdate(req.params.id, sauceObject)
+                .then(() => res.status(200).json({ message: 'like ajouté'}))
+                .catch(error => res.status(500).json({ error: error.message })) 
+            }
               break;
           case 0:
-            sauce.usersLiked.push(likeObject.userId)
-            Sauce.findByIdAndUpdate(req.params.id, sauce)
-              .then(() => res.status(200).json({ message: 'like aunnlé'}))
-              .catch(error => res.status(500).json({ error: error.message })) 
+            if (!usersLikedId && !usersDislikedId) {
+              res.status(401).json({ message: 'Veuillez choisire un avis' })
+            } else {
+              let newusersLiked = sauceObject.usersLiked.filter(id => id != req.body.userId);
+              let newusersDisliked = sauceObject.usersDisliked.filter(id => id != req.body.userId);
+
+              if (usersLikedId && usersDislikedId) {
+                sauceObject.usersLiked = newusersLiked;
+                sauceObject.usersDisliked = newusersDisliked;
+                Sauce.findByIdAndUpdate(req.params.id, sauceObject)
+                  .then(() => res.status(200).json({ message: 'like et dislike sont aunnlés '}))
+                  .catch(error => res.status(500).json({ error: error.message })) 
+              } else {
+                if (usersLikedId) {
+                  sauceObject.usersLiked = newusersLiked;
+                  sauceObject.likes = sauceObject.likes - 1;
+                  sauceObject.usersLiked.push(likeObject.userId)
+                  Sauce.findByIdAndUpdate(req.params.id, sauceObject)
+                    .then(() => res.status(200).json({ message: 'like aunnlé'}))
+                    .catch(error => res.status(500).json({ error: error.message }))
+                } else {
+                  sauceObject.usersDisliked = newusersDisliked;
+                  sauceObject.dislikes = sauceObject.dislikes - 1;
+                  sauceObject.usersDisliked.push(likeObject.userId)
+                  Sauce.findByIdAndUpdate(req.params.id, sauceObject)
+                    .then(() => res.status(200).json({ message: 'dislike aunnlé' }))
+                    .catch(error => res.status(500).json({ error: error.message }))
+                }
+              }
+            }
               break;
           case -1:
-            sauce.dislikes = sauce.dislikes + 1;
-            sauce.usersDisliked.push(likeObject.userId)
-            Sauce.findByIdAndUpdate(req.params.id, sauce)
-              .then(() => res.status(200).json({ message: 'dislike noté'}))
-              .catch(error => res.status(500).json({ error: error.message }))
+            if (usersDislikedId) {
+              res.status(401).json({ message: 'Vous avez deja dislike cette sauce' })
+            } else {
+              let newusersLiked = sauceObject.usersLiked.filter(id => id != req.body.userId);
+              sauceObject.usersLiked = newusersLiked;
+              sauceObject.dislikes = sauceObject.dislikes + 1;
+              sauceObject.usersDisliked.push(likeObject.userId)
+              Sauce.findByIdAndUpdate(req.params.id, sauceObject)
+                .then(() => res.status(200).json({ message: 'dislike ajouté'}))
+                .catch(error => res.status(500).json({ error: error.message })) 
+            }
               break;
         } 
       }
