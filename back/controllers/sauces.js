@@ -1,6 +1,30 @@
 const Sauce = require('../models/Sauce');
 const fs = require('fs');
 
+// afficher les sauces
+exports.getAllSauces = (req, res, next) => {
+  Sauce.find()
+    .then(sauces => res.status(200).json(sauces))
+    .catch(error => res.status(400).json({ error}))
+};
+
+//afficher les detailles d'un sauce
+exports.getOneSauce = (req, res, next) => {
+  Sauce.findById(req.params.id).then(
+    (sauce) => {
+      console.log(sauce)
+      res.status(200).json(sauce);
+    }
+  ).catch(
+    (error) => {
+      console.log(error)
+      res.status(400).json({
+        error: error
+      });
+    }
+  );
+};
+
 // ajouter la sauce
 exports.createSauce = (req, res, next) => {
   const sauceObject = JSON.parse(req.body.sauce);
@@ -66,32 +90,6 @@ exports.deleteSauce = (req, res, next) => {
       });    
 };
 
-
-// afficher les sauces
-exports.getAllSauces = (req, res, next) => {
-  Sauce.find()
-    .then(sauces => res.status(200).json(sauces))
-    .catch(error => res.status(400).json({ error}))
-};
-
-//afficher les detailles d'un sauce
-exports.getOneSauce = (req, res, next) => {
-  Sauce.findById(req.params.id).then(
-    (sauce) => {
-      console.log(sauce)
-      res.status(200).json(sauce);
-    }
-  ).catch(
-    (error) => {
-      console.log(error)
-      res.status(400).json({
-        error: error
-      });
-    }
-  );
-};
-
-
 //commenter une sauce
 exports.likeSauce = (req, res, next) => {
   const likeObject = req.body
@@ -104,6 +102,7 @@ exports.likeSauce = (req, res, next) => {
         let usersLikedId = sauceObject.usersLiked.includes(req.body.userId);
         let usersDislikedId = sauceObject.usersDisliked.includes(req.body.userId);
         switch (likeObject.like) {
+          //ajouter like
           case 1:          
             if (usersLikedId) {
               res.status(401).json({ message: 'Vous avez deja like cette sauce'})
@@ -115,6 +114,7 @@ exports.likeSauce = (req, res, next) => {
                 .catch(error => res.status(500).json({ error: error.message })) 
             }
               break;
+          //ajouter aunnler
           case 0:
             if (!usersLikedId && !usersDislikedId) {
               res.status(401).json({ message: 'Veuillez choisire un avis' })
@@ -132,14 +132,12 @@ exports.likeSauce = (req, res, next) => {
                 if (usersLikedId) {
                   sauceObject.usersLiked = newusersLiked;
                   sauceObject.likes = sauceObject.likes - 1;
-                  sauceObject.usersLiked.push(likeObject.userId)
                   Sauce.findByIdAndUpdate(req.params.id, sauceObject)
                     .then(() => res.status(200).json({ message: 'like aunnlé'}))
                     .catch(error => res.status(500).json({ error: error.message }))
                 } else {
                   sauceObject.usersDisliked = newusersDisliked;
                   sauceObject.dislikes = sauceObject.dislikes - 1;
-                  sauceObject.usersDisliked.push(likeObject.userId)
                   Sauce.findByIdAndUpdate(req.params.id, sauceObject)
                     .then(() => res.status(200).json({ message: 'dislike aunnlé' }))
                     .catch(error => res.status(500).json({ error: error.message }))
@@ -147,6 +145,7 @@ exports.likeSauce = (req, res, next) => {
               }
             }
               break;
+          //ajouter dislike
           case -1:
             if (usersDislikedId) {
               res.status(401).json({ message: 'Vous avez deja dislike cette sauce' })
