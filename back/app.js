@@ -5,7 +5,7 @@ const path = require('path');
 
 const saucesRoutes = require('./routes/sauces');
 const userRoutes = require('./routes/user');
-//const adminRoutes = require('./routes/admin');
+
 
 mongoose.connect('mongodb+srv://xiaowei:2016wonew@p6-op.fptdxxo.mongodb.net/?retryWrites=true&w=majority',
   { useNewUrlParser: true,
